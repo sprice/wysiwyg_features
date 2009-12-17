@@ -1,0 +1,6 @@
+name = Wysiwyg Features
+description = Wysiwyg Features integration from catch. drupal.org/node/624018
+package = Custom
+dependencies[] = wysiwyg
+dependencies[] = features
+core = 6.x

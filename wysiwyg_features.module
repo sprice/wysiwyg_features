@@ -1,0 +1,85 @@
+<?php
+/**
+ * @file Features support.
+ * Wysiwyg Features integration from catch. http://drupal.org/node/624018#comment-2307894
+ */
+
+/**
+ * Implementation of hook_features_api().
+ */
+function wysiwyg_features_features_api() {
+  return array(
+    'wysiwyg' => array(
+      'default_hook' => 'features_default_wysiwyg',
+      'features_source' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_features_export_options().
+ */
+function wysiwyg_features_export_options() {
+  return array('editor' => t('Editor settings'));
+}
+
+/**
+ * Implementation of hook_features_export().
+ */
+function wysiwyg_features_export($data, &$export, $module_name = '') {
+  // The filter_default_formats() hook integration is provided by the
+  // features module so we need to add it as a dependency.
+  $export['dependencies']['features'] = 'features';
+  $result = db_query("SELECT editor FROM {wysiwyg}");
+  while ($row = db_fetch_object($result)) {
+    // Add format to exports
+    $export['features']['wysiwyg'][$row->editor] = $row->editor;
+  }
+
+  return array();
+}
+
+/**
+ * Implementation of hook_features_export_render().
+ */
+function wysiwyg_features_export_render($module = 'foo', $data) {
+  // @todo - without this there is an undefined function features_var_export().
+  module_load_include('inc', 'features', 'features.export');
+  $code = array();
+  $code[] = '  $defaults = array();';
+  $code[] = '';
+
+  $result = db_query("SELECT * FROM {wysiwyg}");
+   while ($row = db_fetch_array($result)) {
+    $row['settings'] = unserialize($row['settings']);
+    $code[] = '  $defaults[] = '. features_var_export($row, '  ') .';';
+    $code[] = '';
+  }
+
+  $code[] = '  return $defaults;';
+  $code = implode("\n", $code);
+  return array('features_default_wysiwyg' => $code);
+}
+
+/**
+ * Implementation of hook_features_export_revert().
+ */
+function wysiwyg_features_revert($module) {
+  wysiwyg_features_rebuild($module);
+}
+
+/**
+ * Implementation of hook_features_export_rebuild().
+ */
+function wysiwyg_features_rebuild($module) {
+  $defaults = module_invoke($module, 'features_default_wysiwyg');
+  if (!empty($defaults)) {
+    foreach ($defaults as $default) {
+      db_query("UPDATE {wysiwyg} SET format = %d, editor = '%s', settings = '%s' WHERE format = %d", $default['format'], $default['editor'], serialize($default['settings']), $default['format']);
+      if (!db_affected_rows()) {
+        db_query("INSERT INTO {wysiwyg} (format, editor, settings) VALUES (%d, '%s', '%s')", $default['format'], $default['edtitor'], serialize($default['settings']));
+      }
+    }
+  }
+}
+
