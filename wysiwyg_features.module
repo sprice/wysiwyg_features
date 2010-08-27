@@ -77,7 +77,7 @@ function wysiwyg_features_rebuild($module) {
     foreach ($defaults as $default) {
       db_query("UPDATE {wysiwyg} SET format = %d, editor = '%s', settings = '%s' WHERE format = %d", $default['format'], $default['editor'], serialize($default['settings']), $default['format']);
       if (!db_affected_rows()) {
-        db_query("INSERT INTO {wysiwyg} (format, editor, settings) VALUES (%d, '%s', '%s')", $default['format'], $default['edtitor'], serialize($default['settings']));
+        db_query("INSERT INTO {wysiwyg} (format, editor, settings) VALUES (%d, '%s', '%s')", $default['format'], $default['editor'], serialize($default['settings']));
       }
     }
   }
